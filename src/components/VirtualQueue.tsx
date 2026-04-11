@@ -2,7 +2,7 @@ import { Clock, Coffee, Bell } from 'lucide-react';
 import { useVenueStore } from '../store/useVenueStore';
 
 const VirtualQueue = () => {
-  const { virtualQueueStatus, setVirtualQueueStatus } = useVenueStore();
+  const { virtualQueueStatus, setVirtualQueueStatus, capacityPct } = useVenueStore();
 
   return (
     <div className="glass-card" style={{ padding: '1.5rem', marginTop: '1rem' }}>
@@ -26,7 +26,7 @@ const VirtualQueue = () => {
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Est. Wait</span>
             </div>
             <div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>32</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{Math.floor(capacityPct * 1.5)}</div>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>In Queue</span>
             </div>
           </div>

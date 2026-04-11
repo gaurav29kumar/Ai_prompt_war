@@ -1,0 +1,40 @@
+name: Security Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security-scans:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      # 1. Linting and Code Analysis
+      - name: Run Linter
+        run: npm run lint
+
+      # 2. Dependency Scanning
+      - name: Run NPM Audit
+        run: npm audit --audit-level=high
+
+      # 3. Secret Detection
+      - name: Detect Hardcoded Secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+      # 4. Automated Testing
+      - name: Unit & Integration Tests
+        run: npm run test

@@ -1,126 +1,90 @@
 import express from 'express';
-import { createServer } from 'http';
+import { createServer as createHttpServer } from 'http';
+import { createServer as createHttpsServer } from 'https';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { startSimulation } from './simulate.js';
+import { registerSocketHandlers } from './socketHandlers.js';
+import { generateLocalCert } from './certGenerator.js';
+import { authRouter } from './auth.js';
+import jwt from 'jsonwebtoken';
 
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const app = express();
-app.use(cors());
 
-const httpServer = createServer(app);
+// 1. Security Headers (CSP, HSTS, X-Frame-Options, etc.)
+app.use(helmet());
+
+// 2. Strong CORS logic (avoiding open '*' in production scenarios)
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? ['https://your-production-domain.com'] 
+  : ['http://localhost:5173', 'https://localhost:5173'];
+
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ['GET', 'POST']
+}));
+
+// 3. API Rate Limiting to prevent basic DDoS and brute-force
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window`
+  standardHeaders: true, 
+  legacyHeaders: false, 
+});
+app.use('/', apiLimiter);
+
+app.use(express.json());
+
+// 4. Attach API Routers targeting JWT Auth
+app.use('/api/auth', authRouter);
+
+// Load Certs if available for HTTPS functionality
+const certs = generateLocalCert();
+const httpServer = certs ? createHttpsServer(certs, app) : createHttpServer(app);
+
 const io = new Server(httpServer, {
   cors: {
-    origin: '*',
+    origin: allowedOrigins,
     methods: ['GET', 'POST']
   }
 });
 
-let venueState = {
-  capacityPct: 84,
-  estWaitTime: 4.2,
-  carbonOffset: 14.5,
-  eWasteCollected: 342.5, // kg
-  congestionLevel: 'low',
-  gateBStatus: 'clear',
-  alerts: [
-    {
-      id: 1,
-      type: 'congestion',
-      message: 'Monitoring crowd density across all gates.',
-      time: 'Just now',
-      autoAction: true
-    }
-  ],
-  infractions: [
-    {
-      id: 101,
-      type: 'littering',
-      location: 'Concourse A',
-      status: 'pending_fine',
-      time: '5 mins ago',
-      evidence: 'Drone Footage'
-    }
-  ],
-  virtualQueueStatus: 'idle',
-  gateThroughput: [
-    { name: 'Gate A', flow: 120 },
-    { name: 'Gate B', flow: 85 },
-    { name: 'Gate C', flow: 210 }
-  ]
-};
+// Start the venue simulation loop
+startSimulation(io);
 
-// Simulate live stadium data
-setInterval(() => {
-  venueState.capacityPct = Math.max(50, Math.min(100, venueState.capacityPct + (Math.random() > 0.5 ? 1 : -1)));
+// 5. Socket.io JWT Middleware Enforcement
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error('Authentication Error: Missing JWT Token'));
+  }
   
-  const waitChange = (Math.random() * 0.4) - 0.2;
-  venueState.estWaitTime = Math.max(1.0, parseFloat((venueState.estWaitTime + waitChange).toFixed(1)));
-  
-  venueState.gateThroughput = venueState.gateThroughput.map(gate => {
-    let baseFlow = gate.name === 'Gate B' && venueState.gateBStatus === 'congested' ? 400 : 150;
-    return { ...gate, flow: Math.floor(baseFlow + (Math.random() * 50 - 25)) };
-  });
-
-  io.emit('stateSync', venueState);
-}, 3000);
-
-io.on('connection', (socket) => {
-  console.log(`Backend: Client connected -> ${socket.id}`);
-  socket.emit('stateSync', venueState);
-
-  socket.on('dispatchAction', (action) => {
-    console.log(`Received action: ${action.type}`);
-
-    switch(action.type) {
-      case 'SIMULATE_CONGESTION':
-        venueState.gateBStatus = action.payload.gateBStatus;
-        venueState.congestionLevel = action.payload.congestionLevel;
-        venueState.estWaitTime += 1.5;
-        venueState.capacityPct += 5;
-        if (action.payload.alert) venueState.alerts.unshift({ ...action.payload.alert, id: Date.now() });
-        break;
-      
-      case 'RESOLVE_CONGESTION':
-        venueState.gateBStatus = 'clear';
-        venueState.congestionLevel = 'low';
-        venueState.estWaitTime = Math.max(1.0, venueState.estWaitTime - 1.5);
-        if (action.payload.alert) venueState.alerts.unshift({ ...action.payload.alert, id: Date.now() });
-        break;
-
-      case 'UPDATE_QUEUE':
-        venueState.virtualQueueStatus = action.payload.status;
-        break;
-
-      case 'REPORT_EWASTE':
-        venueState.eWasteCollected += action.payload.amount;
-        venueState.alerts.unshift({
-          id: Date.now(),
-          type: 'sentiment',
-          message: `Eco-Reward Claimed: Attendee recycled ${action.payload.amount}kg of e-waste.`,
-          time: 'Just now',
-          autoAction: true
-        });
-        break;
-
-      case 'ISSUE_FINE':
-        venueState.infractions.unshift({ ...action.payload.infraction, id: Date.now() });
-        venueState.alerts.unshift({
-          id: Date.now()+1,
-          type: 'congestion',
-          message: `AI Drone detached to intercept ${action.payload.infraction.type} at ${action.payload.infraction.location}. Fine issued.`,
-          time: 'Just now',
-          autoAction: true
-        });
-        break;
-    }
-    io.emit('stateSync', venueState);
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`Backend: Client disconnected -> ${socket.id}`);
+  jwt.verify(token, process.env.JWT_SECRET as string, (err: jwt.VerifyErrors | null, decoded: string | jwt.JwtPayload | undefined) => {
+    if (err) return next(new Error('Authentication Error: Invalid JWT Token'));
+    
+    // Attach decoded user specifically to socket context
+    socket.data.user = decoded; 
+    next();
   });
 });
 
-const PORT = 3001;
+import { venueState } from './state.js';
+
+// Handle new incoming socket connections
+io.on('connection', (socket) => {
+  registerSocketHandlers(io, socket, venueState);
+});
+
+const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
-  console.log(`NeuroVenue Real-time Backend running on http://localhost:${PORT}`);
+  console.log(`NeuroVenue Real-time Backend running on ${certs ? 'https' : 'http'}://localhost:${PORT}`);
 });

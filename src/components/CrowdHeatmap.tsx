@@ -1,15 +1,20 @@
+import React, { useMemo } from 'react';
 import { Map, Activity, ShieldAlert } from 'lucide-react';
 import { useVenueStore } from '../store/useVenueStore';
 
 const CrowdHeatmap = () => {
   const { gateBStatus, gateThroughput } = useVenueStore();
 
-  // Helper to get live flow for a gate else fallback to 100
-  const getFlow = (name: string) => gateThroughput.find(g => g.name === name)?.flow || 100;
+  // Optimize O(N) array scans to an O(1) hash map lookup
+  const flowMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    gateThroughput.forEach(g => { map[g.name] = g.flow; });
+    return map;
+  }, [gateThroughput]);
   
-  const gateAFlow = getFlow('Gate A');
-  const gateBFlow = getFlow('Gate B');
-  const gateCFlow = getFlow('Gate C');
+  const gateAFlow = flowMap['Gate A'] || 100;
+  const gateBFlow = flowMap['Gate B'] || 100;
+  const gateCFlow = flowMap['Gate C'] || 100;
 
   // Animation speed is inversely proportional to flow (higher flow = faster speed)
   // Base duration is around 4s for normal flow (100)
@@ -135,4 +140,4 @@ const CrowdHeatmap = () => {
   );
 };
 
-export default CrowdHeatmap;
+export default React.memo(CrowdHeatmap);

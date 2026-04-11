@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Cpu, ArrowRightLeft, Bell, BatteryCharging, AlertOctagon, X, ExternalLink } from 'lucide-react';
 import { useVenueStore } from '../store/useVenueStore';
@@ -6,6 +6,10 @@ import { useVenueStore } from '../store/useVenueStore';
 const AIAutopilot = () => {
   const { alerts, infractions } = useVenueStore();
   const [showFullLog, setShowFullLog] = useState(false);
+
+  const fullEventLog = useMemo(() => {
+    return [...alerts, ...infractions].sort((a: unknown, b: unknown) => (b as {id: number}).id - (a as {id: number}).id);
+  }, [alerts, infractions]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -98,8 +102,9 @@ const AIAutopilot = () => {
               <button className="btn btn-secondary" onClick={() => setShowFullLog(false)}><X size={20} /></button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', paddingRight: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* Combine both feeds for the "Full Log" */}
-              {[...alerts, ...infractions].sort((a: any, b: any) => b.id - a.id).map((item: any) => (
+              {/* Combine both feeds for the "Full Log" efficiently cached */}
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {fullEventLog.map((item: any) => (
                 <div key={`${item.type}-${item.id}`} style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '1rem' }}>
                   <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)', height: 'fit-content' }}>
                     {item.location ? <AlertOctagon color="#f59e0b" /> : getIcon(item.type)}
@@ -126,4 +131,4 @@ const AIAutopilot = () => {
   );
 };
 
-export default AIAutopilot;
+export default React.memo(AIAutopilot);

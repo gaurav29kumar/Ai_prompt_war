@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Users, Settings, AlertTriangle, X } from 'lucide-react';
 import CrowdHeatmap from '../components/CrowdHeatmap';
 import AIAutopilot from '../components/AIAutopilot';
+import MiniSparkline from '../components/MiniSparkline';
 import { useVenueStore } from '../store/useVenueStore';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { gateBStatus, simulateCongestion, resolveCongestion, capacityPct, estWaitTime, carbonOffset } = useVenueStore();
+  const { gateBStatus, simulateCongestion, resolveCongestion, capacityPct, estWaitTime, carbonOffset, aiReroutingActive, dynamicPricingActive, arBetaActive, toggleSetting } = useVenueStore();
   const [showSettings, setShowSettings] = useState(false);
   const [diagnosticsState, setDiagnosticsState] = useState<'idle' | 'running' | 'success'>('idle');
 
@@ -32,15 +33,15 @@ const Dashboard = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
              <div className="flex-between">
                <span style={{ fontSize: '0.9rem' }}>AI Auto-Rerouting</span>
-               <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary)' }} />
+               <input type="checkbox" checked={aiReroutingActive} onChange={(e) => toggleSetting('aiReroutingActive', e.target.checked)} style={{ accentColor: 'var(--primary)' }} />
              </div>
              <div className="flex-between">
                <span style={{ fontSize: '0.9rem' }}>Dynamic Pricing Sync</span>
-               <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary)' }} />
+               <input type="checkbox" checked={dynamicPricingActive} onChange={(e) => toggleSetting('dynamicPricingActive', e.target.checked)} style={{ accentColor: 'var(--primary)' }} />
              </div>
              <div className="flex-between">
                <span style={{ fontSize: '0.9rem' }}>AR Overlay Beta</span>
-               <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary)' }} />
+               <input type="checkbox" checked={arBetaActive} onChange={(e) => toggleSetting('arBetaActive', e.target.checked)} style={{ accentColor: 'var(--primary)' }} />
              </div>
              <button 
                className="btn btn-secondary" 
@@ -106,17 +107,27 @@ const Dashboard = () => {
         {/* Left Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           <div className="grid-cols-3" style={{ gap: '1rem' }}>
-             <div className="glass-card" style={{ padding: '1rem' }}>
-               <span className="subtitle" style={{ fontSize: '0.8rem' }}>Total Attendees</span>
-               <h3 style={{ fontSize: '1.5rem', marginTop: '0.5rem' }}>64,219</h3>
-               <span style={{ color: 'var(--accent-cyan)', fontSize: '0.8rem' }}>Live tracked</span>
+             <div className="glass-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+               <div>
+                 <span className="subtitle" style={{ fontSize: '0.8rem' }}>Total Attendees</span>
+                 <h3 style={{ fontSize: '1.5rem', marginTop: '0.5rem' }}>64,219</h3>
+                 <span style={{ color: 'var(--accent-cyan)', fontSize: '0.8rem' }}>Live tracked</span>
+               </div>
+               <div style={{ marginTop: '0.5rem', alignSelf: 'flex-end' }}>
+                 <MiniSparkline value={capacityPct} color="var(--accent-cyan)" />
+               </div>
              </div>
-             <div className="glass-card" style={{ padding: '1rem' }}>
-               <span className="subtitle" style={{ fontSize: '0.8rem' }}>Est. Avg Wait Time</span>
-               <h3 style={{ fontSize: '1.5rem', marginTop: '0.5rem', transition: 'color 0.3s', color: estWaitTime > 5.0 ? 'var(--accent-magenta)' : 'white' }}>{estWaitTime} min</h3>
-               <span style={{ color: estWaitTime <= 5.0 ? 'var(--primary)' : 'var(--accent-magenta)', fontSize: '0.8rem' }}>
-                 {estWaitTime <= 5.0 ? 'Optimal Flow' : 'Elevated'}
-               </span>
+             <div className="glass-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+               <div>
+                 <span className="subtitle" style={{ fontSize: '0.8rem' }}>Est. Avg Wait Time</span>
+                 <h3 style={{ fontSize: '1.5rem', marginTop: '0.5rem', transition: 'color 0.3s', color: estWaitTime > 5.0 ? 'var(--accent-magenta)' : 'white' }}>{estWaitTime} min</h3>
+                 <span style={{ color: estWaitTime <= 5.0 ? 'var(--primary)' : 'var(--accent-magenta)', fontSize: '0.8rem' }}>
+                   {estWaitTime <= 5.0 ? 'Optimal Flow' : 'Elevated'}
+                 </span>
+               </div>
+               <div style={{ marginTop: '0.5rem', alignSelf: 'flex-end' }}>
+                 <MiniSparkline value={estWaitTime} color={estWaitTime <= 5.0 ? '#10b981' : '#ec4899'} />
+               </div>
              </div>
              <div className="glass-card" style={{ padding: '1rem' }}>
                <span className="subtitle" style={{ fontSize: '0.8rem' }}>Eco Metrics (Offset & E-Waste)</span>

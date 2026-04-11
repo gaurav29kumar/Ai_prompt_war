@@ -10,17 +10,25 @@ const AROverlayMock = () => {
 
   useEffect(() => {
     let stream: MediaStream | null = null;
+    let isActive = true; // GC Memory constraint flag
+    const currentVideoRef = videoRef.current;
     
     const startCamera = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const media = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        stream = media;
+        if (!isActive) {
+           media.getTracks().forEach(track => track.stop());
+           return;
+        }
         if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+          videoRef.current.srcObject = media;
           await videoRef.current.play();
           setHasCamera(true);
         }
       } catch (err) {
-        console.warn("Camera access denied or unavailable, using simulated background.", err);
+        if (!isActive) return;
+        console.warn("Camera access fallback.", err);
         setHasCamera(false);
       }
     };
@@ -28,11 +36,15 @@ const AROverlayMock = () => {
     startCamera();
 
     return () => {
+      isActive = false;
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
+      if (currentVideoRef) {
+        currentVideoRef.srcObject = null;
+      }
     };
-  }, [arNavigationActive]); // Restart camera if we mount/unmount via portal sometimes
+  }, [arNavigationActive]);
 
   const arGlassStyle: React.CSSProperties = arNavigationActive ? {
     position: 'fixed',
@@ -100,16 +112,16 @@ const AROverlayMock = () => {
 
           {/* Contextual Warning based on State */}
           {gateBStatus === 'congested' && (
-            <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '2px solid var(--accent-magenta)', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeIn 0.3s ease', textAlign: 'center', width: arNavigationActive ? '300px' : '90%' }}>
+            <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translate3d(-50%, 0, 0)', willChange: 'transform', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '2px solid var(--accent-magenta)', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeIn 0.3s ease', textAlign: 'center', width: arNavigationActive ? '300px' : '90%' }}>
                <AlertTriangle size={32} color="var(--accent-magenta)" className="animate-pulse-glow" style={{ marginBottom: '0.5rem' }} />
                <span style={{ color: 'white', fontWeight: 'bold', fontSize: arNavigationActive ? '1.2rem' : '1rem' }}>Reroute Required</span>
                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Gate B is congested ahead. Turning left towards Gate A.</span>
             </div>
           )}
 
-          {/* Mock Floating AR Nav Line */}
+          {/* Mock Floating AR Nav Line - Hardware Accelerated Transform */}
           {arNavigationActive && (
-            <div style={{ position: 'absolute', bottom: '0', left: '50%', transform: 'translateX(-50%)', width: '200px', height: '40vh', borderLeft: '4px dashed var(--primary)', borderBottom: '4px dashed var(--primary)', borderRadius: '0 0 0 40px', opacity: 0.6, animation: 'fadeIn 1s ease' }}>
+            <div style={{ position: 'absolute', bottom: '0', left: '50%', transform: 'translate3d(-50%, 0, 0)', willChange: 'transform', width: '200px', height: '40vh', borderLeft: '4px dashed var(--primary)', borderBottom: '4px dashed var(--primary)', borderRadius: '0 0 0 40px', opacity: 0.6, animation: 'fadeIn 1s ease' }}>
                <div style={{ position: 'absolute', top: '-10px', left: '-12px', width: '20px', height: '20px', background: 'var(--primary)', borderRadius: '50%', boxShadow: '0 0 15px var(--primary-glow)' }} />
             </div>
           )}
