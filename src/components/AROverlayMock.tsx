@@ -6,7 +6,9 @@ import { useVenueStore } from '../store/useVenueStore';
 const AROverlayMock = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasCamera, setHasCamera] = useState<boolean | null>(null);
-  const { gateBStatus, arNavigationActive, setArNavigationActive } = useVenueStore();
+  const gateBStatus = useVenueStore(state => state.gateBStatus);
+  const arNavigationActive = useVenueStore(state => state.arNavigationActive);
+  const setArNavigationActive = useVenueStore(state => state.setArNavigationActive);
 
   useEffect(() => {
     let stream: MediaStream | null = null;

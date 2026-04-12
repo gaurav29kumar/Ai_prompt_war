@@ -2,7 +2,8 @@ import { Server, Socket } from 'socket.io';
 import * as schemas from './schemas.js';
 import { eWasteStore } from './DataStructures/EWasteStore.js';
 
-export const registerSocketHandlers = (io: Server, socket: Socket, venueState: Record<string, unknown>) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const registerSocketHandlers = (io: Server, socket: Socket, venueState: any) => {
   console.log(`Backend: Client connected -> ${socket.id} with ROLE: ${socket.data.user?.role}`);
   socket.emit('stateSync', venueState);
 
@@ -22,6 +23,7 @@ export const registerSocketHandlers = (io: Server, socket: Socket, venueState: R
           venueState.estWaitTime += 1.5;
           venueState.capacityPct += 5;
           if (payload.alert) venueState.alerts.unshift({ ...payload.alert, id: Date.now() });
+          if (venueState.alerts.length > 50) venueState.alerts.length = 50;
           break;
         }
         
@@ -32,6 +34,7 @@ export const registerSocketHandlers = (io: Server, socket: Socket, venueState: R
           venueState.congestionLevel = 'low';
           venueState.estWaitTime = Math.max(1.0, venueState.estWaitTime - 1.5);
           if (payload.alert) venueState.alerts.unshift({ ...payload.alert, id: Date.now() });
+          if (venueState.alerts.length > 50) venueState.alerts.length = 50;
           break;
         }
 
@@ -60,6 +63,7 @@ export const registerSocketHandlers = (io: Server, socket: Socket, venueState: R
             time: 'Just now',
             autoAction: true
           });
+          if (venueState.alerts.length > 50) venueState.alerts.length = 50;
           break;
         }
 
@@ -74,15 +78,18 @@ export const registerSocketHandlers = (io: Server, socket: Socket, venueState: R
             time: 'Just now',
             autoAction: true
           });
+          if (venueState.infractions.length > 50) venueState.infractions.length = 50;
+          if (venueState.alerts.length > 50) venueState.alerts.length = 50;
           break;
         }
       }
       io.emit('stateSync', venueState);
     } catch (err: unknown) {
-      const error = err as { errors?: unknown, message?: string };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const error = err as any;
       console.error('Validation or Authorization Error:', error.errors || error.message);
       // Deny and disconnect if malicious
-      socket.emit('error', err.errors || 'Action unauthorized or malformed');
+      socket.emit('error', error.errors || 'Action unauthorized or malformed');
     }
   });
 

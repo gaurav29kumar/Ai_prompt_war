@@ -4,6 +4,7 @@ import { createServer as createHttpsServer } from 'https';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { startSimulation } from './simulate.js';
 import { registerSocketHandlers } from './socketHandlers.js';
@@ -20,8 +21,19 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const app = express();
 
-// 1. Security Headers (CSP, HSTS, X-Frame-Options, etc.)
-app.use(helmet());
+// 1. Security Headers & Payload Compression
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: ["'self'", "http://localhost:3001", "ws://localhost:3001"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"]
+    }
+  }
+}));
+app.use(compression());
 
 // 2. Strong CORS logic (avoiding open '*' in production scenarios)
 const allowedOrigins = process.env.NODE_ENV === 'production' 

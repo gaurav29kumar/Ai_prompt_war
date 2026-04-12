@@ -8,5 +8,19 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/setupTests.ts'
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) return 'react-vendor';
+            if (id.includes('lucide-react')) return 'ui-vendor';
+            if (id.includes('zustand') || id.includes('socket.io-client')) return 'store-vendor';
+            return 'vendor';
+          }
+        }
+      }
+    }
   }
 })

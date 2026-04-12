@@ -23,12 +23,13 @@ const EcoRewards = () => {
             className="btn action-btn" 
             onClick={handleRecycle}
             data-testid="simulate-ewaste-btn"
+            aria-label="Simulate Electronic Waste Deposit"
           >
-            <Smartphone size={16} /> Simulate E-Waste Deposit
+            <Smartphone size={16} aria-hidden="true" /> Simulate E-Waste Deposit
           </button>
         ) : (
-          <div className="success-msg" data-testid="success-msg">
-            <CheckCircle size={18} /> Points Added! (+250 XP)
+          <div className="success-msg" data-testid="success-msg" role="status" aria-live="polite">
+            <CheckCircle size={18} aria-hidden="true" /> Points Added! (+250 XP)
           </div>
         )}
       </div>

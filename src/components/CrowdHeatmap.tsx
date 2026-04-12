@@ -3,7 +3,8 @@ import { Map, Activity, ShieldAlert } from 'lucide-react';
 import { useVenueStore } from '../store/useVenueStore';
 
 const CrowdHeatmap = () => {
-  const { gateBStatus, gateThroughput } = useVenueStore();
+  const gateBStatus = useVenueStore(state => state.gateBStatus);
+  const gateThroughput = useVenueStore(state => state.gateThroughput);
 
   // Optimize O(N) array scans to an O(1) hash map lookup
   const flowMap = useMemo(() => {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useVenueStore } from '../../store/useVenueStore';
 
 export const useEcoRewards = () => {
-  const { reportEWaste } = useVenueStore();
+  const reportEWaste = useVenueStore(state => state.reportEWaste);
   const [logged, setLogged] = useState(false);
 
   const handleRecycle = () => {

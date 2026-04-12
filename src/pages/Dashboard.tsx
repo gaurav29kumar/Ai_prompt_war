@@ -8,7 +8,16 @@ import { useVenueStore } from '../store/useVenueStore';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { gateBStatus, simulateCongestion, resolveCongestion, capacityPct, estWaitTime, carbonOffset, aiReroutingActive, dynamicPricingActive, arBetaActive, toggleSetting } = useVenueStore();
+  const gateBStatus = useVenueStore(state => state.gateBStatus);
+  const simulateCongestion = useVenueStore(state => state.simulateCongestion);
+  const resolveCongestion = useVenueStore(state => state.resolveCongestion);
+  const capacityPct = useVenueStore(state => state.capacityPct);
+  const estWaitTime = useVenueStore(state => state.estWaitTime);
+  const carbonOffset = useVenueStore(state => state.carbonOffset);
+  const aiReroutingActive = useVenueStore(state => state.aiReroutingActive);
+  const dynamicPricingActive = useVenueStore(state => state.dynamicPricingActive);
+  const arBetaActive = useVenueStore(state => state.arBetaActive);
+  const toggleSetting = useVenueStore(state => state.toggleSetting);
   const [showSettings, setShowSettings] = useState(false);
   const [diagnosticsState, setDiagnosticsState] = useState<'idle' | 'running' | 'success'>('idle');
 
@@ -64,8 +73,8 @@ const Dashboard = () => {
       {/* Header */}
       <header className="flex-between glass-panel" style={{ padding: '1rem 2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button onClick={() => navigate('/')} className="btn" style={{ background: 'transparent', padding: '8px' }}>
-            <ChevronLeft /> Back
+          <button onClick={() => navigate('/')} className="btn" style={{ background: 'transparent', padding: '8px' }} aria-label="Navigate Back">
+            <ChevronLeft aria-hidden="true" /> Back
           </button>
           <div style={{ width: '1px', height: '24px', background: 'var(--border-color)' }}></div>
           <h2 className="text-gradient">NeuroVenue Ops</h2>
@@ -76,8 +85,9 @@ const Dashboard = () => {
             className="btn" 
             style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid #f59e0b', transition: 'all 0.3s' }}
             onClick={useVenueStore.getState().simulateInfraction}
+            aria-label="Simulate Security Fine"
           >
-            <AlertTriangle size={16} /> Simulate Fine
+            <AlertTriangle size={16} aria-hidden="true" /> Simulate Fine
           </button>
           <button 
             className="btn" 
@@ -88,16 +98,17 @@ const Dashboard = () => {
               transition: 'all 0.3s'
             }}
             onClick={handleSimulateCongestion}
+            aria-label={gateBStatus === 'clear' ? "Simulate Gate Congestion" : "Resolve Gate Congestion"}
           >
-            <AlertTriangle size={16} /> 
+            <AlertTriangle size={16} aria-hidden="true" /> 
             {gateBStatus === 'clear' ? 'Simulate Congestion' : 'Resolve Congestion'}
           </button>
-          <div className="glass-card flex-center" style={{ padding: '0.5rem 1rem', gap: '8px', minWidth: '130px' }}>
-            <Users size={18} className="text-secondary" />
+          <div className="glass-card flex-center" style={{ padding: '0.5rem 1rem', gap: '8px', minWidth: '130px' }} aria-label={`Capacity is ${capacityPct}%`} role="status">
+            <Users size={18} className="text-secondary" aria-hidden="true" />
             <span style={{ fontWeight: 'bold' }}>Capacity: {capacityPct}%</span>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowSettings(!showSettings)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid var(--border-color)' }}>
-            <Settings size={18} />
+          <button className="btn btn-primary" onClick={() => setShowSettings(!showSettings)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid var(--border-color)' }} aria-label="Toggle Global Settings">
+            <Settings size={18} aria-hidden="true" />
           </button>
         </div>
       </header>

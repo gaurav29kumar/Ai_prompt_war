@@ -4,7 +4,8 @@ import { Cpu, ArrowRightLeft, Bell, BatteryCharging, AlertOctagon, X, ExternalLi
 import { useVenueStore } from '../store/useVenueStore';
 
 const AIAutopilot = () => {
-  const { alerts, infractions } = useVenueStore();
+  const alerts = useVenueStore(state => state.alerts);
+  const infractions = useVenueStore(state => state.infractions);
   const [showFullLog, setShowFullLog] = useState(false);
 
   const fullEventLog = useMemo(() => {

@@ -2,7 +2,9 @@ import { Clock, Coffee, Bell } from 'lucide-react';
 import { useVenueStore } from '../store/useVenueStore';
 
 const VirtualQueue = () => {
-  const { virtualQueueStatus, setVirtualQueueStatus, capacityPct } = useVenueStore();
+  const virtualQueueStatus = useVenueStore(state => state.virtualQueueStatus);
+  const setVirtualQueueStatus = useVenueStore(state => state.setVirtualQueueStatus);
+  const capacityPct = useVenueStore(state => state.capacityPct);
 
   return (
     <div className="glass-card" style={{ padding: '1.5rem', marginTop: '1rem' }}>
@@ -30,7 +32,7 @@ const VirtualQueue = () => {
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>In Queue</span>
             </div>
           </div>
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setVirtualQueueStatus('joined')}>
+          <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setVirtualQueueStatus('joined')} aria-label="Join Virtual Queue">
             Join Virtual Queue
           </button>
         </div>
@@ -50,10 +52,10 @@ const VirtualQueue = () => {
              <p style={{ fontWeight: 'bold', color: 'var(--accent-cyan)' }}>Preparing Order...</p>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setVirtualQueueStatus('ready')}>
+            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setVirtualQueueStatus('ready')} aria-label="Simulate Ready Status">
               Simulate Ready
             </button>
-            <button className="btn" style={{ background: 'rgba(236,72,153,0.1)', color: 'var(--accent-magenta)', flex: 1 }} onClick={() => setVirtualQueueStatus('idle')}>
+            <button className="btn" style={{ background: 'rgba(236,72,153,0.1)', color: 'var(--accent-magenta)', flex: 1 }} onClick={() => setVirtualQueueStatus('idle')} aria-label="Cancel Virtual Queue Reservation">
               Cancel
             </button>
           </div>
@@ -69,7 +71,7 @@ const VirtualQueue = () => {
           <p className="subtitle" style={{ fontSize: '0.9rem', marginBottom: '1.5rem' }}>
              It's time! Show code <strong style={{ color: 'white', background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px' }}>B42</strong> at Pickup Counter 3.
           </p>
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setVirtualQueueStatus('idle')}>
+          <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setVirtualQueueStatus('idle')} aria-label="Complete Order and Clear Queue Status">
             Complete Order
           </button>
         </div>

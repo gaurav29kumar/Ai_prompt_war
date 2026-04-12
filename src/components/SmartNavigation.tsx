@@ -2,7 +2,7 @@ import { MapPin, Navigation, Map } from 'lucide-react';
 import { useVenueStore } from '../store/useVenueStore';
 
 const SmartNavigation = () => {
-  const { gateBStatus } = useVenueStore();
+  const gateBStatus = useVenueStore(state => state.gateBStatus);
 
   return (
     <div className="glass-card" style={{ padding: '1.5rem', marginTop: '1rem' }}>

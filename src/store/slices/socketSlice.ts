@@ -13,13 +13,11 @@ export const createSocketSlice: StateCreator<any, [], [], SocketSlice> = (set, g
   initSocket: () => {
     if (get().socket) return; 
     
-    // Hardcoded logic here uses the mock JWT token for testing
-    // in the real implementation this comes from Login context
-    const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6Ik9SR0FOSVpFUiIsImlhdCI6MTc3NTkyODM5MSwiZXhwIjoxNzc2MDE0NzkxfQ.GbyM2xSuvvg6dpSHwmqhjSG2fbVE6jJvxQ6ZDttT0Mc";
-
+    // Abstracted Authentication layer logic
+    // Resolving mock JWT token securely through Vite environmental pipelines
     const socket = io('http://localhost:3001', {
       auth: {
-         token: mockToken
+         token: import.meta.env.VITE_MOCK_JWT
       }
     });
 
