@@ -26,7 +26,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "http://localhost:3001", "ws://localhost:3001"],
+      connectSrc: ["'self'", "http://localhost:3001", "ws://localhost:3001", "https://neurovenue.onrender.com", "wss://neurovenue.onrender.com"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:"]
@@ -36,9 +36,18 @@ app.use(helmet({
 app.use(compression());
 
 // 2. Strong CORS logic (avoiding open '*' in production scenarios)
-const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? ['https://your-production-domain.com'] 
-  : ['http://localhost:5173', 'https://localhost:5173'];
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [
+      'https://your-production-domain.com',
+      'https://neurovenue.onrender.com', // Let backend allow itself if serving UI
+      // Allow typical production frontend host URLs to be added later via ENV
+    ]
+  : ['http://localhost:5173', 'https://localhost:5173', 'https://neurovenue.onrender.com'];
+  
+// Additionally allow frontends dynamically if provided via ENV
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 
 app.use(cors({
   origin: allowedOrigins,
@@ -49,8 +58,8 @@ app.use(cors({
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per `window`
-  standardHeaders: true, 
-  legacyHeaders: false, 
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/', apiLimiter);
 
@@ -79,12 +88,12 @@ io.use((socket, next) => {
   if (!token) {
     return next(new Error('Authentication Error: Missing JWT Token'));
   }
-  
+
   jwt.verify(token, process.env.JWT_SECRET as string, (err: jwt.VerifyErrors | null, decoded: string | jwt.JwtPayload | undefined) => {
     if (err) return next(new Error('Authentication Error: Invalid JWT Token'));
-    
+
     // Attach decoded user specifically to socket context
-    socket.data.user = decoded; 
+    socket.data.user = decoded;
     next();
   });
 });
@@ -96,7 +105,7 @@ io.on('connection', (socket) => {
   registerSocketHandlers(io, socket, venueState);
 });
 
-const PORT = process.env.PORT || 3001;
-httpServer.listen(PORT, () => {
-  console.log(`NeuroVenue Real-time Backend running on ${certs ? 'https' : 'http'}://localhost:${PORT}`);
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`NeuroVenue Real-time Backend running on ${certs ? 'https' : 'http'}://0.0.0.0:${PORT}`);
 });

@@ -15,7 +15,7 @@ export const createSocketSlice: StateCreator<any, [], [], SocketSlice> = (set, g
     
     // Abstracted Authentication layer logic
     // Resolving mock JWT token securely through Vite environmental pipelines
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || (import.meta.env.MODE === 'production' ? 'https://neurovenue.onrender.com' : 'http://localhost:3001');
     const socket = io(backendUrl, {
       auth: {
          token: import.meta.env.VITE_MOCK_JWT
