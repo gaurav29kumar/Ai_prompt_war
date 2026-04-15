@@ -105,7 +105,7 @@ io.on('connection', (socket) => {
   registerSocketHandlers(io, socket, venueState);
 });
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
+const PORT = Number(process.env.PORT) || 3001;
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`NeuroVenue Real-time Backend running on ${certs ? 'https' : 'http'}://0.0.0.0:${PORT}`);
 });
